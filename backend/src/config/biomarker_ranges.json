@@ -1,0 +1,114 @@
+{
+  "LDL_CHOLESTEROL": {
+    "unit": "mg/dL",
+    "optimalLow": 0,
+    "optimalHigh": 100,
+    "borderlineLow": 100,
+    "borderlineHigh": 130,
+    "category": "CARDIOVASCULAR"
+  },
+  "HDL_CHOLESTEROL": {
+    "unit": "mg/dL",
+    "optimalLow": 40,
+    "optimalHigh": 90,
+    "borderlineLow": 35,
+    "borderlineHigh": 100,
+    "category": "CARDIOVASCULAR"
+  },
+  "TOTAL_CHOLESTEROL": {
+    "unit": "mg/dL",
+    "optimalLow": 125,
+    "optimalHigh": 200,
+    "borderlineLow": 100,
+    "borderlineHigh": 240,
+    "category": "CARDIOVASCULAR"
+  },
+  "TRIGLYCERIDES": {
+    "unit": "mg/dL",
+    "optimalLow": 0,
+    "optimalHigh": 150,
+    "borderlineLow": 0,
+    "borderlineHigh": 200,
+    "category": "CARDIOVASCULAR"
+  },
+  "APOB": {
+    "unit": "mg/dL",
+    "optimalLow": 0,
+    "optimalHigh": 90,
+    "borderlineLow": 0,
+    "borderlineHigh": 110,
+    "category": "CARDIOVASCULAR"
+  },
+  "HEMOGLOBIN_A1C": {
+    "unit": "%",
+    "optimalLow": 4.0,
+    "optimalHigh": 5.6,
+    "borderlineLow": 3.5,
+    "borderlineHigh": 6.4,
+    "category": "METABOLIC"
+  },
+  "FASTING_GLUCOSE": {
+    "unit": "mg/dL",
+    "optimalLow": 70,
+    "optimalHigh": 100,
+    "borderlineLow": 60,
+    "borderlineHigh": 125,
+    "category": "METABOLIC"
+  },
+  "HSCRP": {
+    "unit": "mg/L",
+    "optimalLow": 0,
+    "optimalHigh": 1.0,
+    "borderlineLow": 0,
+    "borderlineHigh": 3.0,
+    "category": "INFLAMMATION"
+  },
+  "TSH": {
+    "unit": "uIU/mL",
+    "optimalLow": 0.5,
+    "optimalHigh": 4.0,
+    "borderlineLow": 0.3,
+    "borderlineHigh": 5.5,
+    "category": "HORMONAL"
+  },
+  "FREE_T4": {
+    "unit": "ng/dL",
+    "optimalLow": 0.8,
+    "optimalHigh": 1.8,
+    "borderlineLow": 0.6,
+    "borderlineHigh": 2.2,
+    "category": "HORMONAL"
+  },
+  "TESTOSTERONE_TOTAL": {
+    "unit": "ng/dL",
+    "optimalLow": 300,
+    "optimalHigh": 1000,
+    "borderlineLow": 250,
+    "borderlineHigh": 1100,
+    "category": "HORMONAL"
+  },
+  "VITAMIN_D": {
+    "unit": "ng/mL",
+    "optimalLow": 30,
+    "optimalHigh": 80,
+    "borderlineLow": 20,
+    "borderlineHigh": 100,
+    "category": "NUTRITIONAL"
+  },
+  "FERRITIN": {
+    "unit": "ng/mL",
+    "optimalLow": 30,
+    "optimalHigh": 300,
+    "borderlineLow": 15,
+    "borderlineHigh": 400,
+    "category": "NUTRITIONAL"
+  },
+  "VITAMIN_B12": {
+    "unit": "pg/mL",
+    "optimalLow": 200,
+    "optimalHigh": 900,
+    "borderlineLow": 150,
+    "borderlineHigh": 1100,
+    "category": "NUTRITIONAL"
+  }
+}

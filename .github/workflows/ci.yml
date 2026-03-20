@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-lint-test:
+    name: Backend Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements-dev.txt
+
+      - name: Ruff check
+        run: cd backend && ruff check src/ tests/
+
+      - name: Ruff format check
+        run: cd backend && ruff format --check src/ tests/
+
+      - name: Mypy
+        run: cd backend && mypy --strict src/
+
+      - name: Bandit security scan
+        run: cd backend && bandit -r src/ -q
+
+      - name: pip-audit
+        run: cd backend && pip-audit
+
+      - name: Pytest with coverage
+        run: cd backend && pytest --cov=src --cov-fail-under=80 tests/
+
+  infra-lint-test:
+    name: Infrastructure Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infrastructure/package-lock.json
+
+      - name: Install dependencies
+        run: cd infrastructure && npm ci
+
+      - name: CDK synth
+        run: cd infrastructure && npx cdk synth -c stage=dev --quiet
+
+      - name: Jest tests
+        run: cd infrastructure && npx jest --passWithNoTests
+
+      - name: npm audit
+        run: cd infrastructure && npm audit --audit-level=high
+        continue-on-error: true
+
+  frontend-lint-test:
+    name: Frontend Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: TypeScript check
+        run: cd frontend && npx tsc --noEmit
+
+      - name: Vitest
+        run: cd frontend && npx vitest run --passWithNoTests
+        continue-on-error: true
+
+      - name: npm audit
+        run: cd frontend && npm audit --audit-level=high
+        continue-on-error: true
