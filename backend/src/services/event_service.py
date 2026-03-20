@@ -10,12 +10,16 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from typing import TYPE_CHECKING
+
 import boto3
 from botocore.exceptions import ClientError
-from mypy_boto3_events.client import EventBridgeClient
 
-from src.middleware.logging_config import get_logger
-from src.shared.exceptions import InternalError
+if TYPE_CHECKING:
+    from mypy_boto3_events.client import EventBridgeClient
+
+from middleware.logging_config import get_logger
+from shared.exceptions import InternalError
 
 logger = get_logger("event-service")
 

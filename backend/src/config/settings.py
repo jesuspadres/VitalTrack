@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 
-from src.shared.constants import (
+from shared.constants import (
     ENV_AUDIT_TABLE,
     ENV_BIOMARKERS_TABLE,
     ENV_DATA_BUCKET,

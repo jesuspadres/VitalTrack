@@ -10,9 +10,9 @@ import uuid
 
 import pytest
 
-from src.shared.constants import BiomarkerStatus, BiomarkerType
-from src.shared.exceptions import ValidationError
-from src.shared.validators import (
+from shared.constants import BiomarkerStatus, BiomarkerType
+from shared.exceptions import ValidationError
+from shared.validators import (
     sanitize_csv_cell,
     validate_biomarker_value,
     validate_uuid,

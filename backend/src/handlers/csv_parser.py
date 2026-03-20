@@ -16,17 +16,19 @@ import json
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
-from mypy_boto3_dynamodb.service_resource import Table
 
-from src.config.settings import get_settings
-from src.middleware.logging_config import get_logger, inject_correlation_id
-from src.models.events import BiomarkersIngestedEvent
-from src.shared.constants import BiomarkerSource, BiomarkerType
-from src.shared.exceptions import ValidationError
-from src.shared.validators import (
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb.service_resource import Table
+
+from config.settings import get_settings
+from middleware.logging_config import get_logger, inject_correlation_id
+from models.events import BiomarkersIngestedEvent
+from shared.constants import BiomarkerSource, BiomarkerType
+from shared.exceptions import ValidationError
+from shared.validators import (
     get_biomarker_ranges,
     sanitize_csv_cell,
     validate_biomarker_value,
@@ -218,7 +220,9 @@ def _validate_and_convert_rows(
         # Classify against reference ranges
         status = validate_biomarker_value(biomarker_type, value)
         ref = ranges.get(biomarker_type, {})
-        timestamp = now.isoformat() + f".{i:04d}"
+        # Use row index as sub-second offset to ensure unique sort keys
+        row_ts = now.replace(microsecond=i)
+        timestamp = row_ts.isoformat()
 
         items.append({
             "userId": user_id,

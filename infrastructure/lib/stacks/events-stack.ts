@@ -4,6 +4,7 @@ import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { StageConfig } from '../config/environments';
 import { SecureLambda } from '../constructs/secure-lambda';
@@ -39,7 +40,7 @@ export class EventsStack extends cdk.Stack {
     const csvParserLambda = new SecureLambda(this, 'CsvParserLambda', {
       functionName: 'vitaltrack-csv-parser',
       handler: 'handlers.csv_parser.handler',
-      codePath: '../backend/src',
+      codePath: '../backend/.build',
       description: 'Parses uploaded CSV files and ingests biomarker records',
       config,
       timeout: cdk.Duration.seconds(60),
@@ -103,5 +104,19 @@ export class EventsStack extends cdk.Stack {
       description: 'CSV parser dead-letter queue ARN',
       exportName: `vitaltrack-${config.stage}-csv-parser-dlq-arn`,
     });
+
+    // --- cdk-nag suppressions ---
+    NagSuppressions.addResourceSuppressions(csvParserDlq, [
+      {
+        id: 'AwsSolutions-SQS3',
+        reason: 'This queue IS the dead-letter queue. A DLQ for a DLQ creates infinite recursion. Failed messages are monitored via CloudWatch alarm.',
+      },
+    ]);
+    NagSuppressions.addStackSuppressions(this, [
+      {
+        id: 'AwsSolutions-IAM5',
+        reason: 'CDK grantRead/grantReadWriteData generates wildcard actions (s3:GetObject*, s3:List*, etc.) scoped to specific bucket/table ARNs. These are least-privilege at the resource level.',
+      },
+    ]);
   }
 }

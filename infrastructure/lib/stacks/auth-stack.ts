@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { StageConfig } from '../config/environments';
 
@@ -87,5 +88,17 @@ export class AuthStack extends cdk.Stack {
       description: 'Cognito App Client ID',
       exportName: `vitaltrack-${config.stage}-user-pool-client-id`,
     });
+
+    // --- cdk-nag suppressions ---
+    NagSuppressions.addResourceSuppressions(this.userPool, [
+      {
+        id: 'AwsSolutions-COG2',
+        reason: 'MFA is configurable per stage via cognitoMfa setting. Dev uses OPTIONAL to reduce friction during testing.',
+      },
+      {
+        id: 'AwsSolutions-COG3',
+        reason: 'AdvancedSecurityMode (ENFORCED) incurs additional cost. Appropriate for staging/prod but not required for a portfolio project dev environment.',
+      },
+    ]);
   }
 }

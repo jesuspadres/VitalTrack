@@ -12,13 +12,15 @@ import json
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
-from mypy_boto3_dynamodb.service_resource import Table
 
-from src.config.settings import get_settings
-from src.middleware.logging_config import get_logger
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb.service_resource import Table
+
+from config.settings import get_settings
+from middleware.logging_config import get_logger
 
 logger = get_logger("insight-store")
 settings = get_settings()
@@ -29,6 +31,19 @@ _events_client = boto3.client("events")
 
 def _get_insights_table() -> Table:
     return _dynamodb.Table(settings.insights_table)
+
+
+def _convert_decimals(obj: Any) -> Any:
+    """Recursively convert float/int values to Decimal for DynamoDB."""
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    if isinstance(obj, int) and not isinstance(obj, bool):
+        return Decimal(str(obj))
+    if isinstance(obj, dict):
+        return {k: _convert_decimals(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_convert_decimals(item) for item in obj]
+    return obj
 
 
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
@@ -49,7 +64,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         extra={"userId": user_id, "insightId": insight_id, "batchId": batch_id},
     )
 
-    # Build the DynamoDB item
+    # Build the DynamoDB item — store structured data natively
     item: dict[str, Any] = {
         "userId": user_id,
         "insightId": insight_id,
@@ -57,9 +72,10 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         "sourceBatchId": batch_id,
         "category": "GENERAL",
         "summary": insight.get("summary", ""),
-        "fullAnalysis": json.dumps(insight, default=str),
-        "actionPlan": json.dumps(insight.get("actionPlan", []), default=str),
-        "riskFlags": json.dumps(insight.get("riskFlags", []), default=str),
+        "fullAnalysis": insight.get("summary", ""),
+        "actionPlan": _convert_decimals(insight.get("actionPlan", [])),
+        "riskFlags": _convert_decimals(insight.get("riskFlags", [])),
+        "categoryScores": _convert_decimals(insight.get("categoryScores", {})),
         "modelId": model_id,
         "promptVersion": prompt_version,
         "overallScore": Decimal(str(insight.get("overallScore", 0))),

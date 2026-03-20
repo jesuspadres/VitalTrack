@@ -18,10 +18,10 @@ import jinja2
 from botocore.exceptions import ClientError
 from pydantic import ValidationError as PydanticValidationError
 
-from src.config.settings import get_settings
-from src.middleware.logging_config import get_logger
-from src.models.insight import InsightResponse
-from src.shared.exceptions import BedrockError
+from config.settings import get_settings
+from middleware.logging_config import get_logger
+from models.insight import InsightResponse
+from shared.exceptions import BedrockError
 
 logger = get_logger("insight-generate")
 settings = get_settings()

@@ -30,9 +30,9 @@ os.environ.setdefault("INSIGHTS_TABLE_NAME", "vitaltrack-insights-test")
 os.environ.setdefault("DATA_BUCKET_NAME", "vitaltrack-data-test")
 os.environ.setdefault("EVENT_BUS_NAME", "vitaltrack-events-test")
 
-from src.config.settings import get_settings  # noqa: E402
-from src.handlers import biomarker_crud  # noqa: E402
-from src.handlers.biomarker_crud import handler  # noqa: E402
+from config.settings import get_settings  # noqa: E402
+from handlers import biomarker_crud  # noqa: E402
+from handlers.biomarker_crud import handler  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Constants

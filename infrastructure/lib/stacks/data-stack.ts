@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { StageConfig } from '../config/environments';
 import { SecureTable } from '../constructs/secure-table';
@@ -127,5 +128,20 @@ export class DataStack extends cdk.Stack {
       description: 'Data S3 bucket name',
       exportName: `vitaltrack-${config.stage}-data-bucket-name`,
     });
+
+    // --- cdk-nag suppressions ---
+    NagSuppressions.addResourceSuppressions(dataBucketConstruct, [
+      {
+        id: 'AwsSolutions-S1',
+        reason: 'Data bucket access is logged via CloudWatch Lambda logs and X-Ray traces. S3 server access logs add cost with minimal benefit for a non-public bucket.',
+      },
+    ], true);
+    NagSuppressions.addStackSuppressions(this, [
+      {
+        id: 'AwsSolutions-IAM4',
+        reason: 'CDK BucketNotificationsHandler uses AWSLambdaBasicExecutionRole — internal CDK construct, not user-managed.',
+        appliesTo: ['Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'],
+      },
+    ]);
   }
 }

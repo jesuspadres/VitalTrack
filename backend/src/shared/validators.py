@@ -11,8 +11,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from src.shared.constants import BiomarkerStatus, BiomarkerType
-from src.shared.exceptions import ValidationError
+from shared.constants import BiomarkerStatus, BiomarkerType
+from shared.exceptions import ValidationError
 
 # ---------------------------------------------------------------------------
 # Biomarker reference ranges — loaded once from the bundled JSON config

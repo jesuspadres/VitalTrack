@@ -19,8 +19,8 @@ from aws_lambda_powertools import Logger
 
 from pydantic import ValidationError as PydanticValidationError
 
-from src.shared.constants import HTTP_400_BAD_REQUEST, HTTP_500_INTERNAL_SERVER_ERROR
-from src.shared.exceptions import VitalTrackError
+from shared.constants import HTTP_400_BAD_REQUEST, HTTP_500_INTERNAL_SERVER_ERROR
+from shared.exceptions import VitalTrackError
 
 
 def _build_error_response(
@@ -34,6 +34,9 @@ def _build_error_response(
         "headers": {
             "Content-Type": "application/json",
             "X-Request-Id": request_id,
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         },
         "body": json.dumps(
             {

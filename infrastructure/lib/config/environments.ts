@@ -21,7 +21,7 @@ const configs: Record<Stage, StageConfig> = {
     logRetentionDays: 7,
     cloudFrontPriceClass: 'PriceClass_100',
     cognitoMfa: 'OFF',
-    bedrockModelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+    bedrockModelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
     removalPolicy: 'DESTROY',
   },
   staging: {
@@ -32,7 +32,7 @@ const configs: Record<Stage, StageConfig> = {
     logRetentionDays: 30,
     cloudFrontPriceClass: 'PriceClass_100',
     cognitoMfa: 'OPTIONAL',
-    bedrockModelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+    bedrockModelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
     removalPolicy: 'RETAIN',
   },
   prod: {
@@ -43,7 +43,7 @@ const configs: Record<Stage, StageConfig> = {
     logRetentionDays: 90,
     cloudFrontPriceClass: 'PriceClass_All',
     cognitoMfa: 'OPTIONAL',
-    bedrockModelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+    bedrockModelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
     removalPolicy: 'RETAIN',
   },
 };

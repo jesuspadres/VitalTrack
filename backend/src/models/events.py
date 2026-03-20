@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.shared.constants import BiomarkerSource
+from shared.constants import BiomarkerSource
 
 
 class BiomarkersIngestedEvent(BaseModel):

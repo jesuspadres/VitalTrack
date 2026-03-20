@@ -6,15 +6,17 @@ consistent error handling, logging, and type hints.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
-from src.middleware.logging_config import get_logger
-from src.shared.exceptions import ConflictError, InternalError, NotFoundError
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+
+from middleware.logging_config import get_logger
+from shared.exceptions import ConflictError, InternalError, NotFoundError
 
 logger = get_logger("dynamodb-service")
 

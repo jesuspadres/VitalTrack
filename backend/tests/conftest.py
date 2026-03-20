@@ -8,7 +8,11 @@ created to ensure the mocks are picked up.
 from __future__ import annotations
 
 import os
+import sys
 import uuid
+
+# Add src/ to Python path so that imports like 'from config.settings' resolve
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from typing import Any, Generator
 
 import boto3

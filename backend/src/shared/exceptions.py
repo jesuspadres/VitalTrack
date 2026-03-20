@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.shared.constants import (
+from shared.constants import (
     HTTP_400_BAD_REQUEST,
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,

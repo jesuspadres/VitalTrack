@@ -15,10 +15,10 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from src.handlers.insight_fetch_history import handler as fetch_history_handler
-from src.handlers.insight_store import handler as store_handler
-from src.handlers.insight_notify import handler as notify_handler
-from src.handlers.insights_api import handler as api_handler
+from handlers.insight_fetch_history import handler as fetch_history_handler
+from handlers.insight_store import handler as store_handler
+from handlers.insight_notify import handler as notify_handler
+from handlers.insights_api import handler as api_handler
 
 
 _BIOMARKERS_TABLE = "vitaltrack-biomarkers-test"

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.shared.constants import (
+from shared.constants import (
     ActionCategory,
     InsightCategory,
     RiskSeverity,
@@ -24,7 +24,7 @@ from src.shared.constants import (
 class RiskFlag(BaseModel):
     """A single risk flag raised by the AI analysis."""
 
-    model_config = ConfigDict(strict=True, extra="forbid")
+    model_config = ConfigDict(extra="forbid")
 
     biomarker: str = Field(..., description="Biomarker type that triggered the flag.")
     severity: RiskSeverity
@@ -34,7 +34,7 @@ class RiskFlag(BaseModel):
 class ActionPlanItem(BaseModel):
     """A single recommended action from the AI-generated action plan."""
 
-    model_config = ConfigDict(strict=True, extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     priority: int = Field(..., ge=1, description="Priority rank (1 = highest).")
     category: ActionCategory
@@ -56,7 +56,7 @@ class ActionPlanItem(BaseModel):
 class CategoryScore(BaseModel):
     """Health score and trend for a single insight category."""
 
-    model_config = ConfigDict(strict=True, extra="forbid")
+    model_config = ConfigDict(extra="forbid")
 
     score: int = Field(..., ge=0, le=100)
     trend: Trend
@@ -70,7 +70,7 @@ class CategoryScore(BaseModel):
 class InsightResponse(BaseModel):
     """Structured AI insight returned to the client."""
 
-    model_config = ConfigDict(strict=True, extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     summary: str = Field(..., max_length=280, description="Short AI-generated summary.")
     overall_score: int = Field(
@@ -108,7 +108,7 @@ class InsightResponse(BaseModel):
 class InsightRecord(BaseModel):
     """Represents an insight item as stored in DynamoDB."""
 
-    model_config = ConfigDict(strict=True, extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     user_id: str = Field(..., alias="userId")
     insight_id: str = Field(

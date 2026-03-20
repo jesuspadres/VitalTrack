@@ -13,12 +13,12 @@ from typing import Any
 
 import boto3
 
-from src.config.settings import get_settings
-from src.middleware.auth import extract_user_id
-from src.middleware.audit import AuditEventType, log_audit_event
-from src.middleware.error_handler import error_handler
-from src.middleware.logging_config import get_logger, inject_correlation_id
-from src.shared.exceptions import NotFoundError, ValidationError
+from config.settings import get_settings
+from middleware.auth import extract_user_id
+from middleware.audit import AuditEventType, log_audit_event
+from middleware.error_handler import error_handler
+from middleware.logging_config import get_logger, inject_correlation_id
+from shared.exceptions import NotFoundError, ValidationError
 
 logger = get_logger("upload-presign")
 settings = get_settings()
@@ -47,7 +47,13 @@ def _get_user_agent(event: dict[str, Any]) -> str:
 def _success(data: Any, status_code: int = 200, request_id: str = "unknown") -> dict[str, Any]:
     return {
         "statusCode": status_code,
-        "headers": {"Content-Type": "application/json", "X-Request-Id": request_id},
+        "headers": {
+            "Content-Type": "application/json",
+            "X-Request-Id": request_id,
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        },
         "body": json.dumps(
             {
                 "success": True,
@@ -174,8 +180,9 @@ def _handle_batch_status(
             "batchId": item.get("batchId"),
             "status": item.get("status"),
             "filename": item.get("filename"),
-            "recordCount": item.get("recordCount", 0),
-            "errorCount": item.get("errorCount", 0),
+            "recordCount": int(item.get("recordCount", 0)),
+            "errorCount": int(item.get("errorCount", 0)),
+            "errorMessage": item.get("errorMessage"),
             "createdAt": item.get("createdAt"),
         },
         request_id=request_id,

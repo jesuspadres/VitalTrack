@@ -5,6 +5,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { StageConfig } from '../config/environments';
 import { SecureLambda } from '../constructs/secure-lambda';
@@ -38,7 +39,7 @@ export class ApiStack extends cdk.Stack {
     const biomarkerCrudLambda = new SecureLambda(this, 'BiomarkerCrudLambda', {
       functionName: 'vitaltrack-biomarker-crud',
       handler: 'handlers.biomarker_crud.handler',
-      codePath: '../backend/src',
+      codePath: '../backend/.build',
       description: 'Handles biomarker CRUD operations and profile management',
       config,
       environment: {
@@ -52,7 +53,7 @@ export class ApiStack extends cdk.Stack {
     const uploadPresignLambda = new SecureLambda(this, 'UploadPresignLambda', {
       functionName: 'vitaltrack-upload-presign',
       handler: 'handlers.upload_presign.handler',
-      codePath: '../backend/src',
+      codePath: '../backend/.build',
       description: 'Generates presigned S3 URLs for file uploads and tracks batch status',
       config,
       environment: {
@@ -66,7 +67,7 @@ export class ApiStack extends cdk.Stack {
     const insightsLambda = new SecureLambda(this, 'InsightsLambda', {
       functionName: 'vitaltrack-insights-api',
       handler: 'handlers.insights_api.handler',
-      codePath: '../backend/src',
+      codePath: '../backend/.build',
       description: 'Handles insight listing, retrieval, and manual generation trigger',
       config,
       environment: {
@@ -118,6 +119,8 @@ export class ApiStack extends cdk.Stack {
         throttlingBurstLimit: 1000,
         throttlingRateLimit: 500,
         tracingEnabled: true,
+        loggingLevel: apigateway.MethodLoggingLevel.INFO,
+        dataTraceEnabled: false,
         accessLogDestination: new apigateway.LogGroupLogDestination(accessLogGroup),
         accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields(),
       },
@@ -200,5 +203,38 @@ export class ApiStack extends cdk.Stack {
       description: 'VitalTrack API Gateway URL',
       exportName: `vitaltrack-${config.stage}-api-url`,
     });
+
+    // --- cdk-nag suppressions ---
+    NagSuppressions.addResourceSuppressions(health, [
+      {
+        id: 'AwsSolutions-APIG4',
+        reason: 'Health check endpoint is intentionally unauthenticated for load balancer and uptime monitoring.',
+      },
+      {
+        id: 'AwsSolutions-COG4',
+        reason: 'Health check endpoint is intentionally unauthenticated — used by monitoring tools.',
+      },
+    ], true);
+    NagSuppressions.addResourceSuppressions(this.api, [
+      {
+        id: 'AwsSolutions-APIG2',
+        reason: 'Request validation is handled by Pydantic models in Lambda handlers, providing richer validation than API Gateway request validators.',
+      },
+    ]);
+    NagSuppressions.addStackSuppressions(this, [
+      {
+        id: 'AwsSolutions-IAM4',
+        reason: 'AmazonAPIGatewayPushToCloudWatchLogs is required for API Gateway to write execution/access logs. This is an AWS-recommended managed policy.',
+        appliesTo: ['Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'],
+      },
+      {
+        id: 'AwsSolutions-IAM5',
+        reason: 'CDK grantReadWriteData and grantWrite generate wildcard actions (s3:PutObject*, dynamodb:*Item) scoped to specific resource ARNs. DynamoDB index/* wildcards are required for GSI access.',
+      },
+      {
+        id: 'AwsSolutions-APIG3',
+        reason: 'WAFv2 web ACL adds cost inappropriate for a dev/portfolio environment. Would be enabled for staging/prod via config.',
+      },
+    ]);
   }
 }

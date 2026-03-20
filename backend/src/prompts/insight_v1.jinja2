@@ -16,23 +16,23 @@ OUTPUT FORMAT: Respond with valid JSON matching the schema below. No other text.
   "summary": "string (under 280 characters summarizing key findings)",
   "overallScore": number (0-100, where 100 is optimal health based on biomarkers),
   "categoryScores": {
-    "cardiovascular": { "score": 0-100, "trend": "improving|stable|declining" },
-    "metabolic": { "score": 0-100, "trend": "improving|stable|declining" },
-    "hormonal": { "score": 0-100, "trend": "improving|stable|declining" },
-    "nutritional": { "score": 0-100, "trend": "improving|stable|declining" },
-    "inflammation": { "score": 0-100, "trend": "improving|stable|declining" }
+    "CARDIOVASCULAR": { "score": 0-100, "trend": "IMPROVING|STABLE|DECLINING" },
+    "METABOLIC": { "score": 0-100, "trend": "IMPROVING|STABLE|DECLINING" },
+    "HORMONAL": { "score": 0-100, "trend": "IMPROVING|STABLE|DECLINING" },
+    "NUTRITIONAL": { "score": 0-100, "trend": "IMPROVING|STABLE|DECLINING" },
+    "INFLAMMATION": { "score": 0-100, "trend": "IMPROVING|STABLE|DECLINING" }
   },
   "riskFlags": [
     {
       "biomarker": "BIOMARKER_TYPE",
-      "severity": "high|medium|low",
+      "severity": "HIGH|MEDIUM|LOW",
       "message": "Clear explanation of concern"
     }
   ],
   "actionPlan": [
     {
       "priority": 1,
-      "category": "diet|exercise|supplement|lifestyle|medical",
+      "category": "DIET|EXERCISE|SUPPLEMENT|LIFESTYLE|MEDICAL",
       "title": "Short action title",
       "description": "Detailed actionable recommendation",
       "relevantBiomarkers": ["BIOMARKER_TYPE"],

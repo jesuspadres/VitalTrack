@@ -10,24 +10,27 @@ import json
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
+from urllib.parse import unquote
 
 import boto3
-from mypy_boto3_dynamodb.service_resource import Table
 
-from src.config.settings import get_settings
-from src.middleware.auth import enforce_user_isolation, extract_user_id
-from src.middleware.audit import AuditEventType, log_audit_event
-from src.middleware.error_handler import error_handler
-from src.middleware.logging_config import get_logger, inject_correlation_id
-from src.models.biomarker import (
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb.service_resource import Table
+
+from config.settings import get_settings
+from middleware.auth import enforce_user_isolation, extract_user_id
+from middleware.audit import AuditEventType, log_audit_event
+from middleware.error_handler import error_handler
+from middleware.logging_config import get_logger, inject_correlation_id
+from models.biomarker import (
     BatchCreateRequest,
     CreateBiomarkerRequest,
     UpdateBiomarkerRequest,
 )
-from src.shared.constants import BiomarkerStatus
-from src.shared.exceptions import NotFoundError, ValidationError
-from src.shared.validators import validate_biomarker_value
+from shared.constants import BiomarkerStatus
+from shared.exceptions import NotFoundError, ValidationError
+from shared.validators import validate_biomarker_value
 
 logger = get_logger("biomarker-crud")
 settings = get_settings()
@@ -61,7 +64,13 @@ def _success(
 
     return {
         "statusCode": status_code,
-        "headers": {"Content-Type": "application/json", "X-Request-Id": request_id},
+        "headers": {
+            "Content-Type": "application/json",
+            "X-Request-Id": request_id,
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        },
         "body": json.dumps({"success": True, "data": data, "meta": meta}, default=_decimal_default),
     }
 
@@ -118,7 +127,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_batch_create(user_id, request_id, event)
 
     # ── Biomarker item routes ────────────────────────────────
-    sk = path_params.get("sk")
+    sk = unquote(path_params.get("sk", "")) if path_params.get("sk") else None
     if sk:
         if method == "GET":
             return _handle_get_biomarker(user_id, sk, request_id, event)
@@ -148,7 +157,7 @@ def _handle_create_biomarker(
 
     status = validate_biomarker_value(req.biomarker_type.value, req.value)
 
-    from src.shared.validators import get_biomarker_ranges
+    from shared.validators import get_biomarker_ranges
 
     ranges = get_biomarker_ranges()
     ref = ranges.get(req.biomarker_type.value, {})
@@ -338,7 +347,7 @@ def _handle_batch_create(
     now = datetime.now(tz=timezone.utc)
     batch_id = str(uuid.uuid4())
 
-    from src.shared.validators import get_biomarker_ranges
+    from shared.validators import get_biomarker_ranges
 
     ranges = get_biomarker_ranges()
 

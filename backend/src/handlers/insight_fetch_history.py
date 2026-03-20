@@ -9,15 +9,17 @@ from __future__ import annotations
 
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
 from boto3.dynamodb.conditions import Key
-from mypy_boto3_dynamodb.service_resource import Table
 
-from src.config.settings import get_settings
-from src.middleware.logging_config import get_logger
-from src.shared.constants import BiomarkerType
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb.service_resource import Table
+
+from config.settings import get_settings
+from middleware.logging_config import get_logger
+from shared.constants import BiomarkerType
 
 logger = get_logger("insight-fetch-history")
 settings = get_settings()
@@ -90,8 +92,10 @@ def _extract_current_batch(
 
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Entry point — invoked by the Step Functions insight workflow."""
-    user_id: str = event["userId"]
-    batch_id: str = event["batchId"]
+    # EventBridge wraps the payload in "detail"; direct invocations pass at top level
+    detail = event.get("detail", event)
+    user_id: str = detail["userId"]
+    batch_id: str = detail["batchId"]
 
     logger.info(
         "Fetching biomarker history for insight generation",
@@ -123,17 +127,17 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         },
     )
 
+    insufficient = biomarker_count < 3
     result: dict[str, Any] = {
         "userId": user_id,
         "batchId": batch_id,
         "biomarkerHistory": _decimal_to_float(biomarker_history),
         "currentResults": _decimal_to_float(current_results),
         "biomarkerCount": biomarker_count,
+        "insufficientData": insufficient,
     }
 
-    # Flag insufficient data so the Step Function Choice state can branch
-    if biomarker_count < 3:
-        result["insufficientData"] = True
+    if insufficient:
         logger.info(
             "Insufficient biomarker data for full insight",
             extra={"batchId": batch_id, "biomarkerCount": biomarker_count},

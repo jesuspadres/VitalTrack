@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.shared.constants import BiomarkerSource, BiomarkerStatus, BiomarkerType
+from shared.constants import BiomarkerSource, BiomarkerStatus, BiomarkerType
 
 
 # ---------------------------------------------------------------------------

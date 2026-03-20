@@ -8,6 +8,7 @@ venv/
 # Build outputs
 infrastructure/cdk.out/
 frontend/dist/
+backend/.build/
 backend/.pytest_cache/
 backend/.mypy_cache/
 backend/.ruff_cache/
@@ -35,3 +36,13 @@ htmlcov/
 
 # CDK
 cdk.context.json
+
+# Claude Code local settings
+.claude/
+
+# Build artifacts
+*.zip
+
+# Debug/test output
+bedrock-test.json
+lambda-out.json

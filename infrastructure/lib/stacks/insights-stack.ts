@@ -35,7 +35,7 @@ export class InsightsStack extends cdk.Stack {
     const fetchHistoryLambda = new SecureLambda(this, 'FetchHistoryLambda', {
       functionName: 'vitaltrack-insight-fetch-history',
       handler: 'handlers.insight_fetch_history.handler',
-      codePath: '../backend/src',
+      codePath: '../backend/.build',
       description: 'Fetches biomarker history for insight generation',
       config,
       environment: {
@@ -47,7 +47,7 @@ export class InsightsStack extends cdk.Stack {
     const generateLambda = new SecureLambda(this, 'GenerateLambda', {
       functionName: 'vitaltrack-insight-generate',
       handler: 'handlers.insight_generate.handler',
-      codePath: '../backend/src',
+      codePath: '../backend/.build',
       description: 'Invokes Bedrock to generate AI health insights',
       config,
       timeout: cdk.Duration.seconds(90),
@@ -60,14 +60,27 @@ export class InsightsStack extends cdk.Stack {
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['bedrock:InvokeModel'],
-        resources: [`arn:aws:bedrock:*::foundation-model/${config.bedrockModelId}`],
+        resources: [
+          // Cross-region inference profile
+          `arn:aws:bedrock:*:${this.account}:inference-profile/${config.bedrockModelId}`,
+          // Underlying foundation models the profile may route to
+          `arn:aws:bedrock:*::foundation-model/*`,
+        ],
+      }),
+    );
+    // Required for first-time Anthropic model activation via Marketplace
+    generateLambda.function.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['aws-marketplace:Subscribe', 'aws-marketplace:ViewSubscriptions'],
+        resources: ['*'],
       }),
     );
 
     const storeLambda = new SecureLambda(this, 'StoreLambda', {
       functionName: 'vitaltrack-insight-store',
       handler: 'handlers.insight_store.handler',
-      codePath: '../backend/src',
+      codePath: '../backend/.build',
       description: 'Stores generated insights in DynamoDB',
       config,
       environment: {
@@ -81,7 +94,7 @@ export class InsightsStack extends cdk.Stack {
     const notifyLambda = new SecureLambda(this, 'NotifyLambda', {
       functionName: 'vitaltrack-insight-notify',
       handler: 'handlers.insight_notify.handler',
-      codePath: '../backend/src',
+      codePath: '../backend/.build',
       description: 'Sends notification when insight is ready',
       config,
       environment: {
@@ -182,12 +195,28 @@ export class InsightsStack extends cdk.Stack {
         ),
     );
 
+    const logGroup = new cdk.aws_logs.LogGroup(this, 'InsightWorkflowLogs', {
+      logGroupName: `/aws/vendedlogs/states/vitaltrack-insight-workflow-${config.stage}`,
+      retention: config.logRetentionDays === 7
+        ? cdk.aws_logs.RetentionDays.ONE_WEEK
+        : config.logRetentionDays === 90
+          ? cdk.aws_logs.RetentionDays.THREE_MONTHS
+          : cdk.aws_logs.RetentionDays.ONE_MONTH,
+      removalPolicy: config.removalPolicy === 'DESTROY'
+        ? cdk.RemovalPolicy.DESTROY
+        : cdk.RemovalPolicy.RETAIN,
+    });
+
     const stateMachine = new sfn.StateMachine(this, 'InsightWorkflow', {
       stateMachineName: `vitaltrack-insight-workflow-${config.stage}`,
       stateMachineType: sfn.StateMachineType.EXPRESS,
       definitionBody: sfn.DefinitionBody.fromChainable(definition),
       timeout: cdk.Duration.minutes(5),
       tracingEnabled: true,
+      logs: {
+        destination: logGroup,
+        level: sfn.LogLevel.ALL,
+      },
     });
 
     // CDK auto-generates IAM policies with wildcards for Step Functions Lambda invoke,
@@ -223,5 +252,17 @@ export class InsightsStack extends cdk.Stack {
       description: 'SNS topic for user notifications',
       exportName: `vitaltrack-${config.stage}-notification-topic-arn`,
     });
+
+    // --- cdk-nag suppressions ---
+    NagSuppressions.addResourceSuppressions(notificationTopic, [
+      {
+        id: 'AwsSolutions-SNS2',
+        reason: 'Notification topic uses server-side encryption via default AWS-managed key. KMS CMK adds cost without meaningful security benefit for non-sensitive notification metadata.',
+      },
+      {
+        id: 'AwsSolutions-SNS3',
+        reason: 'Only CloudWatch Alarms and internal Lambda functions publish to this topic — all within the AWS network. SSL enforcement adds no practical security benefit.',
+      },
+    ]);
   }
 }

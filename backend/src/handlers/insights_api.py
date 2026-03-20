@@ -7,16 +7,18 @@ from __future__ import annotations
 
 import json
 from typing import Any
+from decimal import Decimal
+from urllib.parse import unquote
 
 import boto3
 from datetime import datetime, timezone
 
-from src.config.settings import get_settings
-from src.middleware.auth import extract_user_id
-from src.middleware.audit import AuditEventType, log_audit_event
-from src.middleware.error_handler import error_handler
-from src.middleware.logging_config import get_logger, inject_correlation_id
-from src.shared.exceptions import NotFoundError, ValidationError
+from config.settings import get_settings
+from middleware.auth import extract_user_id
+from middleware.audit import AuditEventType, log_audit_event
+from middleware.error_handler import error_handler
+from middleware.logging_config import get_logger, inject_correlation_id
+from shared.exceptions import NotFoundError, ValidationError
 
 logger = get_logger("insights-api")
 settings = get_settings()
@@ -41,7 +43,13 @@ def _get_user_agent(event: dict[str, Any]) -> str:
 def _success(data: Any, status_code: int = 200, request_id: str = "unknown") -> dict[str, Any]:
     return {
         "statusCode": status_code,
-        "headers": {"Content-Type": "application/json", "X-Request-Id": request_id},
+        "headers": {
+            "Content-Type": "application/json",
+            "X-Request-Id": request_id,
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        },
         "body": json.dumps(
             {
                 "success": True,
@@ -72,7 +80,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_generate_trigger(user_id, request_id, event)
 
     # GET /v1/insights/{insightId} — get specific insight
-    insight_id = path_params.get("insightId")
+    insight_id = unquote(path_params.get("insightId", "")) if path_params.get("insightId") else None
     if insight_id and method == "GET":
         return _handle_get_insight(user_id, insight_id, request_id, event)
 
@@ -81,6 +89,19 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_list_insights(user_id, request_id, event)
 
     raise ValidationError(message=f"Unsupported route: {method} {path}")
+
+
+def _decimal_to_native(obj: Any) -> Any:
+    """Recursively convert Decimal values to int/float for JSON serialization."""
+    if isinstance(obj, Decimal):
+        if obj == int(obj):
+            return int(obj)
+        return float(obj)
+    if isinstance(obj, dict):
+        return {k: _decimal_to_native(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_decimal_to_native(item) for item in obj]
+    return obj
 
 
 def _handle_list_insights(
@@ -106,7 +127,7 @@ def _handle_list_insights(
         query_kwargs["ExclusiveStartKey"] = decoded
 
     result = table.query(**query_kwargs)
-    items = result.get("Items", [])
+    items = [_decimal_to_native(item) for item in result.get("Items", [])]
 
     response_data: dict[str, Any] = {
         "insights": items,
@@ -141,6 +162,8 @@ def _handle_get_insight(
 
     if not item:
         raise NotFoundError(message=f"Insight '{insight_id}' not found.")
+
+    item = _decimal_to_native(item)
 
     log_audit_event(
         user_id=user_id,

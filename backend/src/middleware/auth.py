@@ -10,7 +10,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from src.shared.exceptions import AuthorizationError, ValidationError
+from shared.exceptions import AuthorizationError, ValidationError
 
 
 def extract_user_id(event: dict[str, Any]) -> str:

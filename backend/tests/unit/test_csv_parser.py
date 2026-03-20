@@ -16,12 +16,12 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from src.handlers.csv_parser import (
+from handlers.csv_parser import (
     _parse_csv,
     _validate_and_convert_rows,
     handler,
 )
-from src.shared.exceptions import ValidationError
+from shared.exceptions import ValidationError
 
 
 # ---------------------------------------------------------------------------

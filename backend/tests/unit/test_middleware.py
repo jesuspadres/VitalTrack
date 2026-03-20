@@ -12,9 +12,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.middleware.auth import enforce_user_isolation, extract_user_id
-from src.middleware.error_handler import error_handler
-from src.shared.exceptions import (
+from middleware.auth import enforce_user_isolation, extract_user_id
+from middleware.error_handler import error_handler
+from shared.exceptions import (
     AuthorizationError,
     NotFoundError,
     ValidationError,

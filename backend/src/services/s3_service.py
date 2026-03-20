@@ -6,12 +6,16 @@ error handling.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import boto3
 from botocore.exceptions import ClientError
-from mypy_boto3_s3.client import S3Client
 
-from src.middleware.logging_config import get_logger
-from src.shared.exceptions import InternalError, NotFoundError
+if TYPE_CHECKING:
+    from mypy_boto3_s3.client import S3Client
+
+from middleware.logging_config import get_logger
+from shared.exceptions import InternalError, NotFoundError
 
 logger = get_logger("s3-service")
 

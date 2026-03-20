@@ -14,13 +14,15 @@ import hashlib
 import time
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
-from mypy_boto3_dynamodb.service_resource import Table
 
-from src.config.settings import get_settings
-from src.middleware.logging_config import get_logger
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb.service_resource import Table
+
+from config.settings import get_settings
+from middleware.logging_config import get_logger
 
 logger = get_logger("audit")
 

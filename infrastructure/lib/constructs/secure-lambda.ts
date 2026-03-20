@@ -3,6 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { NagSuppressions } from 'cdk-nag';
 import { StageConfig } from '../config/environments';
 
 export interface SecureLambdaProps {
@@ -65,6 +66,21 @@ export class SecureLambda extends Construct {
       layers: props.layers,
       logGroup,
     });
+
+    // Suppress known cdk-nag findings that apply to all Lambda functions
+    NagSuppressions.addResourceSuppressions(this.role, [
+      {
+        id: 'AwsSolutions-IAM4',
+        reason: 'AWSLambdaBasicExecutionRole is required for CloudWatch Logs access. Custom policies are added per-function for specific resources.',
+        appliesTo: ['Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'],
+      },
+    ]);
+    NagSuppressions.addResourceSuppressions(this.function, [
+      {
+        id: 'AwsSolutions-L1',
+        reason: 'Python 3.12 is the latest stable runtime supported by our dependencies. Will upgrade when 3.13 is validated.',
+      },
+    ]);
   }
 
   private getLogRetention(days: number): logs.RetentionDays {
