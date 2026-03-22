@@ -10,6 +10,7 @@ import BiomarkerDetailPage from '@/pages/BiomarkerDetailPage';
 import UploadPage from '@/pages/UploadPage';
 import InsightsPage from '@/pages/InsightsPage';
 import InsightDetailPage from '@/pages/InsightDetailPage';
+import ComparePage from '@/pages/ComparePage';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/biomarkers" element={<ProtectedRoute><BiomarkersPage /></ProtectedRoute>} />
       <Route path="/biomarkers/:id" element={<ProtectedRoute><BiomarkerDetailPage /></ProtectedRoute>} />
+      <Route path="/compare" element={<ProtectedRoute><ComparePage /></ProtectedRoute>} />
       <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
       <Route path="/insights" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />
       <Route path="/insights/:id" element={<ProtectedRoute><InsightDetailPage /></ProtectedRoute>} />

@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
+import { toast } from 'sonner';
 import { useInsights, useTriggerInsight } from '@/hooks/useInsights';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { formatDate, getScoreColor } from '@/utils/format';
 import type { InsightRecord } from '@/types/api';
 
@@ -128,20 +130,141 @@ function InsightCard({ insight }: { insight: InsightRecord }) {
   );
 }
 
+// ─── Generating skeleton ─────────────────────────────────────
+const GENERATING_STEPS = [
+  'Fetching your biomarker history...',
+  'Analyzing trends and patterns...',
+  'Generating AI health insight...',
+  'Almost there...',
+];
+
+function GeneratingCard() {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStepIndex((i) => (i < GENERATING_STEPS.length - 1 ? i + 1 : i));
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="card p-5 relative overflow-hidden">
+      {/* Shimmer overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_2s_ease-in-out_infinite]" />
+
+      <div className="relative space-y-4">
+        {/* Sparkle icon + step label */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500/10">
+            <svg
+              className="h-5 w-5 text-primary-500 animate-pulse"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"
+              />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-700">Generating Insight</p>
+            <p className="text-xs text-primary-500 transition-all duration-300">
+              {GENERATING_STEPS[stepIndex]}
+            </p>
+          </div>
+        </div>
+
+        {/* Progress steps */}
+        <div className="flex gap-1.5">
+          {GENERATING_STEPS.map((_, i) => (
+            <div
+              key={i}
+              className={clsx(
+                'h-1 flex-1 rounded-full transition-all duration-500',
+                i <= stepIndex ? 'bg-primary-400' : 'bg-slate-200/60',
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Skeleton lines */}
+        <div className="space-y-2 pt-1">
+          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── InsightsPage ────────────────────────────────────────────
 export default function InsightsPage() {
-  const { data, isLoading, isError, error } = useInsights();
+  const { data, isLoading, isError, error, refetch } = useInsights();
   const triggerInsight = useTriggerInsight();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const prevCountRef = useRef<number | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
 
-  const [successMessage, setSuccessMessage] = useState('');
+  const insights = data?.insights ?? [];
+
+  // Track mounted state for safe async cleanup
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  // Detect when a new insight appears during generation
+  useEffect(() => {
+    if (!isGenerating) {
+      prevCountRef.current = insights.length;
+      return;
+    }
+
+    if (prevCountRef.current !== null && insights.length > prevCountRef.current) {
+      setIsGenerating(false);
+      toast.success('New AI insight generated!');
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    }
+  }, [insights.length, isGenerating]);
 
   const handleGenerate = async () => {
-    setSuccessMessage('');
     try {
+      prevCountRef.current = insights.length;
+      setIsGenerating(true);
       await triggerInsight.mutateAsync();
-      setSuccessMessage('Insight generation triggered. It may take a moment to appear.');
+
+      if (!mountedRef.current) return;
+
+      // Poll for the new insight every 3 seconds
+      pollTimerRef.current = setInterval(() => {
+        void refetch();
+      }, 3000);
+
+      // Timeout after 60 seconds
+      timeoutRef.current = setTimeout(() => {
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+        if (mountedRef.current) {
+          setIsGenerating(false);
+          toast.error('Insight generation timed out. Please try again.');
+        }
+      }, 60000);
     } catch {
-      // Error is accessible via triggerInsight.error
+      setIsGenerating(false);
+      toast.error('Failed to trigger insight generation.');
     }
   };
 
@@ -164,8 +287,6 @@ export default function InsightsPage() {
     );
   }
 
-  const insights = data?.insights ?? [];
-
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -180,9 +301,9 @@ export default function InsightsPage() {
           type="button"
           className="btn-primary flex items-center gap-2"
           onClick={handleGenerate}
-          disabled={triggerInsight.isPending}
+          disabled={isGenerating || triggerInsight.isPending}
         >
-          {triggerInsight.isPending ? (
+          {isGenerating || triggerInsight.isPending ? (
             <>
               <svg
                 className="animate-spin h-4 w-4 text-white"
@@ -191,37 +312,15 @@ export default function InsightsPage() {
                 viewBox="0 0 24 24"
                 aria-hidden="true"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               Generating...
             </>
           ) : (
             <>
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"
-                />
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
               </svg>
               Generate New Insight
             </>
@@ -229,39 +328,12 @@ export default function InsightsPage() {
         </button>
       </div>
 
-      {/* Success toast */}
-      {successMessage && (
-        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-700 backdrop-blur-sm">
-          {successMessage}
-        </div>
-      )}
-
-      {/* Error toast */}
-      {triggerInsight.isError && (
-        <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-600 backdrop-blur-sm">
-          {triggerInsight.error instanceof Error
-            ? triggerInsight.error.message
-            : 'Failed to trigger insight generation.'}
-        </div>
-      )}
-
       {/* Content */}
-      {insights.length === 0 ? (
+      {insights.length === 0 && !isGenerating ? (
         <EmptyState
           icon={
-            <svg
-              className="h-12 w-12"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-              />
+            <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           }
           title="No insights yet"
@@ -273,6 +345,7 @@ export default function InsightsPage() {
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
+          {isGenerating && <GeneratingCard />}
           {insights.map((insight) => (
             <InsightCard key={insight.insightId} insight={insight} />
           ))}

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useBiomarkers } from '@/hooks/useBiomarkers';
 import { BiomarkerTable } from '@/components/biomarkers/BiomarkerTable';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { BiomarkerTableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function BiomarkersPage() {
@@ -9,11 +9,7 @@ export default function BiomarkersPage() {
   const navigate = useNavigate();
 
   if (isLoading) {
-    return (
-      <div className="py-20">
-        <LoadingSpinner size="lg" text="Loading biomarkers..." />
-      </div>
-    );
+    return <BiomarkerTableSkeleton />;
   }
 
   if (isError) {

@@ -1,9 +1,9 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQueries, useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/services/api-client';
 import type { PresignResponse } from '@/types/api';
 
 // ─── Response types ──────────────────────────────────────────
-interface BatchStatusResponse {
+export interface BatchStatusResponse {
   batchId: string;
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   recordCount?: number;
@@ -26,19 +26,21 @@ export function usePresignUrl() {
   });
 }
 
-/** Poll batch processing status. Stops when status is COMPLETED or FAILED. */
-export function useBatchStatus(batchId: string | null) {
-  return useQuery({
-    queryKey: uploadKeys.batchStatus(batchId ?? ''),
-    queryFn: () =>
-      apiClient.get<BatchStatusResponse>(
-        `/upload/${encodeURIComponent(batchId!)}/status`,
-      ),
-    enabled: !!batchId,
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      if (status === 'COMPLETED' || status === 'FAILED') return false;
-      return 3000;
-    },
+/** Poll multiple batch statuses in parallel. */
+export function useBatchStatuses(batchIds: string[]) {
+  return useQueries({
+    queries: batchIds.map((id) => ({
+      queryKey: uploadKeys.batchStatus(id),
+      queryFn: () =>
+        apiClient.get<BatchStatusResponse>(
+          `/upload/${encodeURIComponent(id)}/status`,
+        ),
+      enabled: !!id,
+      refetchInterval: (query: { state: { data?: BatchStatusResponse } }) => {
+        const status = query.state.data?.status;
+        if (status === 'COMPLETED' || status === 'FAILED') return false;
+        return 3000;
+      },
+    })),
   });
 }

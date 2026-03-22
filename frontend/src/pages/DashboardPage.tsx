@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { useBiomarkers } from '@/hooks/useBiomarkers';
 import { useInsights } from '@/hooks/useInsights';
 import { BiomarkerSparkline } from '@/components/dashboard/BiomarkerSparkline';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatBiomarkerType, formatDate, getScoreColor } from '@/utils/format';
 import type { BiomarkerRecord } from '@/types/api';
@@ -119,11 +119,7 @@ export default function DashboardPage() {
   return (
     <div className="animate-fade-in space-y-6">
       {/* Loading */}
-      {isLoading && (
-        <div className="mt-12">
-          <LoadingSpinner size="lg" text="Loading your dashboard..." className="py-20" />
-        </div>
-      )}
+      {isLoading && <DashboardSkeleton />}
 
       {/* Error */}
       {!isLoading && isError && (

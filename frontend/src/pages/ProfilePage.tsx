@@ -1,8 +1,9 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ProfileSkeleton } from '@/components/ui/Skeleton';
 import { formatDate } from '@/utils/format';
 
 export default function ProfilePage() {
@@ -15,7 +16,6 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState('');
   const [unitsPreference, setUnitsPreference] = useState<'metric' | 'imperial'>('metric');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -27,29 +27,30 @@ export default function ProfilePage() {
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
-    setSuccessMessage('');
     updateProfile.mutate(
       { displayName: displayName.trim() || undefined, unitsPreference, notificationsEnabled },
       {
         onSuccess: () => {
-          setSuccessMessage('Profile updated successfully.');
-          setTimeout(() => setSuccessMessage(''), 3000);
+          toast.success('Profile updated successfully.');
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : 'Failed to update profile.');
         },
       },
     );
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/login', { replace: true });
+    try {
+      await signOut();
+      navigate('/login', { replace: true });
+    } catch {
+      toast.error('Failed to sign out. Please try again.');
+    }
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <LoadingSpinner size="lg" text="Loading profile..." />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (isError) {
@@ -106,18 +107,6 @@ export default function ProfilePage() {
       {/* Settings form */}
       <div className="card p-6">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-5">Settings</h2>
-
-        {successMessage && (
-          <div className="mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-700 backdrop-blur-sm">
-            {successMessage}
-          </div>
-        )}
-
-        {updateProfile.isError && (
-          <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-600 backdrop-blur-sm">
-            {updateProfile.error instanceof Error ? updateProfile.error.message : 'Failed to update profile.'}
-          </div>
-        )}
 
         <form onSubmit={handleSave} className="space-y-5">
           <div>

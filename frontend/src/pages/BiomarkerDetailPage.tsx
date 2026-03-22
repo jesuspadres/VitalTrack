@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useBiomarker, useBiomarkers, useDeleteBiomarker } from '@/hooks/useBiomarkers';
 import { BiomarkerChart } from '@/components/biomarkers/BiomarkerChart';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { BiomarkerDetailSkeleton } from '@/components/ui/Skeleton';
 import {
   formatBiomarkerType,
   formatDate,
@@ -27,11 +28,7 @@ export default function BiomarkerDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (biomarkerLoading) {
-    return (
-      <div className="py-20">
-        <LoadingSpinner size="lg" text="Loading biomarker..." />
-      </div>
-    );
+    return <BiomarkerDetailSkeleton />;
   }
 
   if (biomarkerError || !biomarker) {
@@ -63,7 +60,13 @@ export default function BiomarkerDetailPage() {
 
   const handleDelete = () => {
     deleteMutation.mutate(decodedSk, {
-      onSuccess: () => navigate('/biomarkers', { replace: true }),
+      onSuccess: () => {
+        toast.success('Biomarker deleted successfully.');
+        navigate('/biomarkers', { replace: true });
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Failed to delete biomarker.');
+      },
     });
   };
 
