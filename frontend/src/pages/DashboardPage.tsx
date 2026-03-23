@@ -222,7 +222,7 @@ export default function DashboardPage() {
                 </h1>
                 <p className="mt-1 text-sm text-slate-400">
                   {hasScore
-                    ? latestInsight?.summary ?? 'Based on your latest biomarker results.'
+                    ? latestInsight?.summary ?? 'Based on your biomarker history and trends.'
                     : 'Upload your lab results to get your health score.'}
                 </p>
 
@@ -230,7 +230,7 @@ export default function DashboardPage() {
                 {biomarkerGroups.size > 0 && (
                   <div className="mt-4 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-500/8 border border-slate-500/10 px-3 py-1 text-xs font-semibold text-slate-600">
-                      {biomarkerGroups.size} biomarkers tracked
+                      {biomarkerGroups.size} tracked
                     </span>
                     {statusCounts.OPTIMAL > 0 && (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-600">
