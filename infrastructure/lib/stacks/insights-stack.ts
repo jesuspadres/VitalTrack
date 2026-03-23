@@ -234,7 +234,7 @@ export class InsightsStack extends cdk.Stack {
       description: 'Triggers insight generation when biomarkers are ingested',
       eventBus,
       eventPattern: {
-        source: ['vitaltrack.csv-parser'],
+        source: ['vitaltrack.csv-parser', 'vitaltrack.insights-api'],
         detailType: ['BiomarkersIngested'],
       },
       targets: [new targets.SfnStateMachine(stateMachine)],

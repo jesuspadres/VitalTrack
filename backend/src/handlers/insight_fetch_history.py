@@ -112,9 +112,17 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Build per-type history (last 3 records each)
     biomarker_history = _build_history(all_items)
 
-    # Extract the current batch's records
+    # Extract the current batch's records (if any)
     current_results = _extract_current_batch(all_items, batch_id)
-    unique_types = {r.get("biomarkerType") for r in current_results if r.get("biomarkerType")}
+
+    # For manual triggers the batchId won't match any records, so fall back
+    # to evaluating sufficiency based on the full history instead.
+    if current_results:
+        unique_types = {r.get("biomarkerType") for r in current_results if r.get("biomarkerType")}
+    else:
+        unique_types = set(biomarker_history.keys())
+        current_results = _decimal_to_float(all_items)  # give the model everything
+
     biomarker_count = len(unique_types)
 
     logger.info(

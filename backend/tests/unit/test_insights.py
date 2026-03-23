@@ -134,8 +134,8 @@ class TestFetchHistory:
         assert result["biomarkerCount"] == 5
         assert len(result["currentResults"]) == 5
         assert len(result["biomarkerHistory"]) == 5
-        # insufficientData should NOT be set when >= 3 biomarkers
-        assert "insufficientData" not in result
+        # insufficientData should be False when >= 3 biomarkers
+        assert result["insufficientData"] is False
 
     @mock_aws
     def test_insufficient_data_flagged(self) -> None:

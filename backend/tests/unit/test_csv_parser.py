@@ -191,6 +191,49 @@ class TestValidateAndConvertRows:
         items = _validate_and_convert_rows(rows, _USER_ID, _BATCH_ID)
         assert items[0]["status"] == "OPTIMAL"
 
+    def test_measured_date_used_when_provided(self) -> None:
+        """When measuredDate is present, it should be used instead of now()."""
+        rows = [
+            {"biomarkerType": "LDL_CHOLESTEROL", "value": "95", "unit": "mg/dL", "measuredDate": "2025-09-15"},
+        ]
+        items = _validate_and_convert_rows(rows, _USER_ID, _BATCH_ID)
+        assert len(items) == 1
+        assert items[0]["createdAt"].startswith("2025-09-15")
+
+    def test_measured_date_various_formats(self) -> None:
+        """dateutil should parse multiple date formats."""
+        rows = [
+            {"biomarkerType": "LDL_CHOLESTEROL", "value": "95", "unit": "mg/dL", "measuredDate": "Sep 15, 2025"},
+        ]
+        items = _validate_and_convert_rows(rows, _USER_ID, _BATCH_ID)
+        assert items[0]["createdAt"].startswith("2025-09-15")
+
+    def test_measured_date_with_time(self) -> None:
+        """ISO datetime with timezone should be preserved."""
+        rows = [
+            {"biomarkerType": "LDL_CHOLESTEROL", "value": "95", "unit": "mg/dL", "measuredDate": "2025-09-15T10:30:00Z"},
+        ]
+        items = _validate_and_convert_rows(rows, _USER_ID, _BATCH_ID)
+        assert "2025-09-15" in items[0]["createdAt"]
+
+    def test_measured_date_invalid_raises(self) -> None:
+        """An invalid measuredDate value should cause a validation error."""
+        rows = [
+            {"biomarkerType": "LDL_CHOLESTEROL", "value": "95", "unit": "mg/dL", "measuredDate": "not-a-date"},
+        ]
+        with pytest.raises(ValidationError, match="1 invalid row"):
+            _validate_and_convert_rows(rows, _USER_ID, _BATCH_ID)
+
+    def test_no_measured_date_falls_back_to_now(self) -> None:
+        """When measuredDate is absent, createdAt should be close to now."""
+        from datetime import datetime, timezone
+
+        rows = [VALID_ROW]
+        items = _validate_and_convert_rows(rows, _USER_ID, _BATCH_ID)
+        created = datetime.fromisoformat(items[0]["createdAt"])
+        now = datetime.now(tz=timezone.utc)
+        assert abs((now - created).total_seconds()) < 5
+
 
 # ---------------------------------------------------------------------------
 # handler — integration tests with moto

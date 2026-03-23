@@ -170,7 +170,7 @@ class TestCreateBiomarker:
         assert body["success"] is True
         data = body["data"]
         assert data["biomarkerType"] == "LDL_CHOLESTEROL"
-        assert data["status"] == "OPTIMAL"
+        assert data["status"] == "NORMAL"  # 95 is in-range but near the edge
         assert data["userId"] == _USER_A
         assert data["sk"].startswith("BIOMARKER#")
 

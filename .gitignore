@@ -40,6 +40,9 @@ cdk.context.json
 # Claude Code local settings
 .claude/
 
+# TypeScript build info
+*.tsbuildinfo
+
 # Build artifacts
 *.zip
 

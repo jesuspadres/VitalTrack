@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from dateutil import parser as dateutil_parser
+
 import boto3
 
 if TYPE_CHECKING:
@@ -220,8 +222,26 @@ def _validate_and_convert_rows(
         # Classify against reference ranges
         status = validate_biomarker_value(biomarker_type, value)
         ref = ranges.get(biomarker_type, {})
-        # Use row index as sub-second offset to ensure unique sort keys
-        row_ts = now.replace(microsecond=i)
+
+        # Use measuredDate if provided, otherwise fall back to now()
+        measured_date_str = row.get("measuredDate", "").strip()
+        if measured_date_str:
+            try:
+                row_ts = dateutil_parser.parse(measured_date_str)
+                if row_ts.tzinfo is None:
+                    row_ts = row_ts.replace(tzinfo=timezone.utc)
+            except (ValueError, OverflowError):
+                errors.append({
+                    "row": row_num,
+                    "field": "measuredDate",
+                    "issue": f"Invalid date format: '{measured_date_str}'",
+                })
+                continue
+        else:
+            row_ts = now
+
+        # Add sub-second offset to ensure unique sort keys within a batch
+        row_ts = row_ts.replace(microsecond=i)
         timestamp = row_ts.isoformat()
 
         items.append({

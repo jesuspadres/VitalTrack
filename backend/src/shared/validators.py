@@ -58,10 +58,15 @@ def validate_biomarker_value(
     """Classify *value* against the reference ranges for *biomarker_type*.
 
     Returns one of:
-    - ``OPTIMAL``      — within the optimal range (inclusive)
-    - ``NORMAL``       — an alias; currently mapped to OPTIMAL for exact range hits
+    - ``OPTIMAL``      — within the inner portion of the optimal range
+    - ``NORMAL``       — within the optimal range but near the edges
     - ``BORDERLINE``   — outside optimal but within the borderline range
     - ``OUT_OF_RANGE`` — outside the borderline range
+
+    OPTIMAL vs NORMAL: values in the inner 60% of the optimal range are
+    considered OPTIMAL; values in the outer 20% bands on either side are
+    NORMAL.  This prevents an LDL of 98 (just below the 100 cutoff) from
+    receiving the same "optimal" badge as an LDL of 50.
 
     Raises ``ValidationError`` when *value* is negative.
     """
@@ -86,7 +91,14 @@ def validate_biomarker_value(
     borderline_high: float = float(config["borderlineHigh"])
 
     if optimal_low <= value <= optimal_high:
-        return BiomarkerStatus.OPTIMAL
+        # Subdivide: inner 60% of the range is OPTIMAL, outer edges are NORMAL
+        optimal_range = optimal_high - optimal_low
+        buffer = optimal_range * 0.2
+        inner_low = optimal_low + buffer
+        inner_high = optimal_high - buffer
+        if inner_low <= value <= inner_high:
+            return BiomarkerStatus.OPTIMAL
+        return BiomarkerStatus.NORMAL
 
     if borderline_low <= value <= borderline_high:
         return BiomarkerStatus.BORDERLINE

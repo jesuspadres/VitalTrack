@@ -26,12 +26,21 @@ from shared.validators import (
 
 class TestValidateBiomarkerValue:
     def test_validate_optimal_range(self) -> None:
-        """A value within the optimal range returns OPTIMAL.
+        """A value within the inner portion of the optimal range returns OPTIMAL.
 
-        LDL_CHOLESTEROL optimal range: 0 - 100 mg/dL.
+        LDL_CHOLESTEROL optimal range: 0 - 100 mg/dL, inner 60%: 20 - 80.
+        """
+        result = validate_biomarker_value(BiomarkerType.LDL_CHOLESTEROL, 50.0)
+        assert result is BiomarkerStatus.OPTIMAL
+
+    def test_validate_normal_range(self) -> None:
+        """A value within optimal range but near the edge returns NORMAL.
+
+        LDL_CHOLESTEROL optimal range: 0 - 100 mg/dL, inner 60%: 20 - 80.
+        A value of 85 is within optimal but outside the inner band.
         """
         result = validate_biomarker_value(BiomarkerType.LDL_CHOLESTEROL, 85.0)
-        assert result is BiomarkerStatus.OPTIMAL
+        assert result is BiomarkerStatus.NORMAL
 
     def test_validate_borderline_range(self) -> None:
         """A value outside optimal but within borderline returns BORDERLINE.
@@ -66,9 +75,9 @@ class TestValidateBiomarkerValue:
         assert result is BiomarkerStatus.OPTIMAL
 
     def test_validate_boundary_value_optimal_high(self) -> None:
-        """A value exactly at the optimal high boundary is OPTIMAL (inclusive)."""
+        """A value at the optimal high boundary is NORMAL (in-range but near edge)."""
         result = validate_biomarker_value(BiomarkerType.LDL_CHOLESTEROL, 100.0)
-        assert result is BiomarkerStatus.OPTIMAL
+        assert result is BiomarkerStatus.NORMAL
 
     def test_validate_boundary_value_borderline_high(self) -> None:
         """A value exactly at the borderline high boundary is BORDERLINE (inclusive)."""
